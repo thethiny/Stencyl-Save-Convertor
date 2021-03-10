@@ -8,12 +8,16 @@ import json
 stencyl_object = Dict[str, Union[str, int, float, Dict[str, Any], List[str]]]
 
 object_start = 'o'
+array_start = 'a'
 object_end = 'g'
+array_end = 'h'
 string = 'y'
 zero = 'z'
 integer = 'i'
 decimal = 'd'
-real = 'R'
+real = 'R' # Possible Enumerate
+
+rvalue = '<R>'
 
 save_file_name = argv[1]
 
@@ -57,7 +61,15 @@ def write_object(object: stencyl_object):
             else:
                 encoded_data += f"d{value}"
         elif isinstance(value, str):
-            encoded_data += write_string(value)
+            if value.startswith(rvalue):
+                # RValue
+                value = float(value[len(rvalue):])
+                if int(value) == value:
+                    encoded_data += f"R{int(value)}"
+                else:
+                    encoded_data += f"R{value}"
+            else:
+                encoded_data += write_string(value)
         elif isinstance(value, dict):
             encoded_data += write_object(value)
         elif isinstance(value, list):

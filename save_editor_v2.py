@@ -12,7 +12,9 @@ string = 'y'
 zero = 'z'
 integer = 'i'
 decimal = 'd'
-real = 'R'
+real = 'R' # Possible Enumerate
+
+rvalue = '<R>'
 
 save_file_name = argv[1]
 
@@ -51,7 +53,7 @@ def get_integer():
 def get_float():
     char = get_char()
     digits = ""
-    while char in '1234567890.-':
+    while char in '1234567890.-+e':
         digits += char
         char = get_char()
     adjust_index(-1)
@@ -96,13 +98,17 @@ while idx < len(data):
     elif char == integer:
         value = get_integer()
         decoded += str(value)
-    elif char == real or char == decimal:
+    elif char == real:
+        value = get_float()
+        decoded += f"\"{rvalue}{value}\""
+    # elif char == real or char == decimal:
+    elif char == decimal:
         value = get_float()
         decoded += str(value)
     elif char == zero:
         decoded += '0'
     else:
-        raise Exception(f"Unknown Character {char}")
+        raise Exception(f"Unknown Character {char} at index {idx}")
     
     if is_key and not is_array:
         decoded += ": "
