@@ -17,8 +17,6 @@ integer = 'i'
 decimal = 'd'
 reference = 'R' # String Counter, counts number of strings to use them as Reference
 
-rvalue = '<R>'
-
 save_file_name = argv[1]
 
 with open(save_file_name, encoding='utf-8') as file:
@@ -137,18 +135,15 @@ def read_object(decoded, is_key, is_array=False):
     
     return decoded, is_key
 
-# while idx < len(data):
 if data[0] == object_start:
-    decoded, is_key = read_object(decoded, is_key)
+    decoded, _ = read_object(decoded, is_key)
     decoded = remove_trailing_comma(decoded)
     decoded += '}'
 elif data[0] in [array_start, set_start]:
-    decoded, is_key = read_object(decoded, is_key, True)
+    decoded, _ = read_object(decoded, is_key, True)
     decoded = remove_trailing_comma(decoded)
     decoded += ']'
 
-
 with open(f"{save_file_name}.json", 'w+', encoding='utf-8') as file:
     file.write(decoded)
-
 

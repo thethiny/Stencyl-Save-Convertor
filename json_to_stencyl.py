@@ -5,7 +5,10 @@ from urllib.parse import quote, unquote
 from sys import argv
 import json
 
-stencyl_object = Dict[str, Union[str, int, float, Dict[str, Any], List[str]]]
+stencyl_literals = Union[str, int, float]
+stencyl_dict = Union[Dict[str, Any]]
+stencyl_list = List[stencyl_dict]
+stencyl_object = Union[stencyl_dict, stencyl_list]
 
 object_start = 'o'
 array_start = 'a'
@@ -17,16 +20,16 @@ integer = 'i'
 decimal = 'd'
 reference = 'R' # Duplicate Strings
 
-strings_list = []
+strings_list: List[str] = []
 
 save_file_name = argv[1]
 
 with open(save_file_name, encoding='utf-8') as file:
-    data: Union[stencyl_object, List[stencyl_object]] = json.load(file)
+    data: stencyl_object = json.load(file)
 
-encoded = ""
+encoded: str = ""
 
-def write_string(string_name):
+def write_string(string_name: str) -> str:
     if string_name not in strings_list:
         strings_list.append(string_name)
         name = string
@@ -37,23 +40,25 @@ def write_string(string_name):
     else:
         return f"{reference}{strings_list.index(string_name)}"
 
-def write_array(array):
+def write_array(array: stencyl_list) -> str:
     encoded = array_start
     for element in array:
         encoded += write_object(element)
     encoded += array_end
     return encoded
 
-def write_object(object):
+def write_dict(object: stencyl_dict) -> str:
+    encoded = object_start
+    for key, value in object.items():
+        encoded += write_string(key)
+        encoded += write_object(value)
+    encoded += object_end
+    return encoded
+
+def write_object(object: Union[stencyl_object, stencyl_literals]) -> str:
     encoded_data = ""
 
-    if isinstance(object, dict):
-        encoded_data += object_start
-        for key, value in object.items():
-            encoded_data += write_string(key)
-            encoded_data += write_object(value)
-        encoded_data += object_end
-    elif object == 0:
+    if object == 0:
         encoded_data += zero
     elif isinstance(object, int):
         encoded_data += f"i{object}"
