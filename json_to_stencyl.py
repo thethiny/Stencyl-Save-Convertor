@@ -70,7 +70,7 @@ def write_object(object: Union[stencyl_object, stencyl_literals]) -> str:
     elif isinstance(object, str):
         encoded_data += write_string(object)
     elif isinstance(object, dict):
-        encoded_data += write_object(object)
+        encoded_data += write_dict(object)
     elif isinstance(object, list):
         encoded_data += write_array(object)
 
