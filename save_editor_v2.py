@@ -1,3 +1,4 @@
+from os import read
 import sys
 from urllib.parse import quote, unquote
 from sys import argv, is_finalizing
@@ -6,13 +7,15 @@ import json
 
 object_start = 'o'
 array_start = 'a'
+set_start = 'b' # Tuple or Set
 object_end = 'g'
 array_end = 'h'
+set_end = 'h'
 string = 'y'
 zero = 'z'
 integer = 'i'
 decimal = 'd'
-real = 'R' # Possible Enumerate
+reference = 'R' # String Counter, counts number of strings to use them as Reference
 
 rvalue = '<R>'
 
@@ -23,6 +26,7 @@ with open(save_file_name, encoding='utf-8') as file:
 
 decoded = ""
 idx = 0
+strings_list = []
 
 def adjust_index(val=1):
     global idx
@@ -71,52 +75,77 @@ def remove_trailing_comma(string):
     return string
 
 is_key = True
-is_array = False
 
-while idx < len(data):
+def read_string():
+    length = get_length()
+    name = read_name(length)
+    strings_list.append(name)
+    return f'"{name}"'
+
+def read_integer():
+    value = get_integer()
+    return str(value)
+
+def read_real():
+    value = get_integer()
+    return f'"{strings_list[value]}"'
+    # return f"\"{rvalue}{value}\""
+
+def read_float():
+    value = get_float()
+    return str(value)
+
+def read_object(decoded, is_key, is_array=False):
     char = get_char()
     if char == object_start:
         decoded += "{"
-        continue
+        while data[idx] != object_end:
+            decoded, is_key = read_object(decoded, is_key)
+        return decoded, is_key
     elif char == object_end:
         decoded = remove_trailing_comma(decoded)
-        decoded += "}"
-        continue
-    elif char == array_start:
+        decoded += "},"
+        return decoded, is_key
+    elif char == array_start or char == set_start:
         decoded += '['
-        is_array = True
-        continue
+        while data[idx] != array_end:
+            decoded, is_key = read_object(decoded, is_key, True)
+        return decoded, is_key
     elif char == array_end:
         decoded = remove_trailing_comma(decoded)
-        decoded += ']'
-        is_array = False
-        continue
+        decoded += '],'
+        return decoded, is_key
     elif char == string:
-        length = get_length()
-        name = read_name(length)
-        decoded += f'"{name}"'
+        decoded += read_string()
     elif char == integer:
-        value = get_integer()
-        decoded += str(value)
-    elif char == real:
-        value = get_float()
-        decoded += f"\"{rvalue}{value}\""
-    # elif char == real or char == decimal:
+        decoded += read_integer()
+    elif char == reference:
+        decoded += read_real()
     elif char == decimal:
-        value = get_float()
-        decoded += str(value)
+        decoded += read_float()
     elif char == zero:
         decoded += '0'
     else:
         raise Exception(f"Unknown Character {char} at index {idx}")
-    
+
     if is_key and not is_array:
         decoded += ": "
     else:
         decoded += ','
     
     is_key = not is_key
+    
+    return decoded, is_key
 
+# while idx < len(data):
+if data[0] == object_start:
+    decoded, is_key = read_object(decoded, is_key)
+    decoded = remove_trailing_comma(decoded)
+    decoded += '}'
+elif data[0] in [array_start, set_start]:
+    decoded, is_key = read_object(decoded, is_key, True)
+    decoded = remove_trailing_comma(decoded)
+    decoded += ']'
 
 
 with open(f"{save_file_name}.json", 'w+', encoding='utf-8') as file:

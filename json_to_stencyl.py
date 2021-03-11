@@ -15,75 +15,73 @@ string = 'y'
 zero = 'z'
 integer = 'i'
 decimal = 'd'
-real = 'R' # Possible Enumerate
+reference = 'R' # Duplicate Strings
 
-rvalue = '<R>'
+strings_list = []
 
 save_file_name = argv[1]
 
 with open(save_file_name, encoding='utf-8') as file:
     data: Union[stencyl_object, List[stencyl_object]] = json.load(file)
 
-if isinstance(data, dict):
-    data = [data]
-
 encoded = ""
 
 def write_string(string_name):
-    name = ""
-    name += string
-    string_name = quote(string_name)
-    name += str(len(string_name)) + ':'
-    name += string_name
-    return name
+    if string_name not in strings_list:
+        strings_list.append(string_name)
+        name = string
+        string_name = quote(string_name, safe='')
+        name += f"{len(string_name)}:"
+        name += string_name
+        return name
+    else:
+        return f"{reference}{strings_list.index(string_name)}"
 
 def write_array(array):
-    encoded = 'a'
+    encoded = array_start
     for element in array:
-        encoded += write_string(element)
-    encoded += 'h'
+        encoded += write_object(element)
+    encoded += array_end
     return encoded
 
-def write_object(object: stencyl_object):
+def write_object(object):
     encoded_data = ""
 
-    encoded_data += object_start
-
-    for key, value in object.items():
-        encoded_data += write_string(key)
-        if value == 0:
-            encoded_data += zero
-        elif isinstance(value, int):
-            encoded_data += f"i{value}"
-        elif isinstance(value, float):
-            if int(value) == value:
-                encoded_data += f"d{int(value)}"
-            else:
-                encoded_data += f"d{value}"
-        elif isinstance(value, str):
-            if value.startswith(rvalue):
-                # RValue
-                value = float(value[len(rvalue):])
-                if int(value) == value:
-                    encoded_data += f"R{int(value)}"
-                else:
-                    encoded_data += f"R{value}"
-            else:
-                encoded_data += write_string(value)
-        elif isinstance(value, dict):
+    if isinstance(object, dict):
+        encoded_data += object_start
+        for key, value in object.items():
+            encoded_data += write_string(key)
             encoded_data += write_object(value)
-        elif isinstance(value, list):
-            encoded_data += write_array(value)
+        encoded_data += object_end
+    elif object == 0:
+        encoded_data += zero
+    elif isinstance(object, int):
+        encoded_data += f"i{object}"
+    elif isinstance(object, float):
+        if int(object) == object:
+            encoded_data += f"d{int(object)}"
+        else:
+            encoded_data += f"d{object}"
+    elif isinstance(object, str):
+        encoded_data += write_string(object)
+    elif isinstance(object, dict):
+        encoded_data += write_object(object)
+    elif isinstance(object, list):
+        encoded_data += write_array(object)
 
-
-    encoded_data += object_end
     return encoded_data
 
-for object in data:
-    encoded += write_object(object)
+# if isinstance(data, dict):
+#     encoded += write_object(data)
+# elif isinstance(data, list):
+#     encoded += write_array(object)
+# else:
+#     raise Exception("Invalid Iterable Type")
+
+encoded = write_object(data)
     
 
-with open(f"{save_file_name}.stencyl", 'w+', encoding='ascii') as file:
+with open(f"{save_file_name}.sol", 'w+', encoding='ascii') as file:
     file.write(encoded)
 
 
