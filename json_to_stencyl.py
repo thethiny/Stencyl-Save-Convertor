@@ -71,17 +71,8 @@ def write_object(object):
 
     return encoded_data
 
-# if isinstance(data, dict):
-#     encoded += write_object(data)
-# elif isinstance(data, list):
-#     encoded += write_array(object)
-# else:
-#     raise Exception("Invalid Iterable Type")
 
 encoded = write_object(data)
-    
 
 with open(f"{save_file_name}.sol", 'w+', encoding='ascii') as file:
     file.write(encoded)
-
-
