@@ -145,5 +145,6 @@ elif data[0] in [array_start, set_start]:
     decoded += ']'
 
 with open(f"{save_file_name}.json", 'w+', encoding='utf-8') as file:
-    file.write(decoded)
+    json.dump(json.loads(decoded), file, indent=4)
+    # file.write(decoded)
 
